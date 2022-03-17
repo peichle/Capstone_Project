@@ -11,7 +11,7 @@ Git clone https://github.com/peichle/Capstone_Project.git
 mkdir build
 cd /build
 cmake .. && make
-./car_detector --input=<link-to-image>
+./car_detection --input=<link-to-image>
 ```
 
 ## References
