@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.22.3)
+
+set(CMAKE_CXX_STANDARD 17)
+project(car_detection)
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++17 -pthread")
+
+find_package(OpenCV 4.1 REQUIRED)
+
+include_directories(include)
+include_directories(${OpenCV_INCLUDE_DIRS})
+link_directories(${OpenCV_LIBRARY_DIRS})
+add_definitions(${OpenCV_DEFINITIONS})
+
+# Find all executables
+file(GLOB SOURCES "src/*.cpp")
+
+add_executable(car_detection ${SOURCES})
+target_link_libraries(car_detection ${OpenCV_LIBS} )
