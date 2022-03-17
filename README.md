@@ -6,8 +6,13 @@
 - g++/gcc >= 9.4.0
 
 ## Getting started
-1. Git clone
-2. mkdir build
-4. cd /build
-5. cmake .. && make
-6. ./XXX 
+```
+Git clone https://github.com/peichle/Capstone_Project.git
+mkdir build
+cd /build
+cmake .. && make
+./car_detector --input=<link-to-image>
+```
+
+## References
+- Darknet: https://github.com/pjreddie/darknet
