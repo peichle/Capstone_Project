@@ -28,7 +28,7 @@ Clone the repo
 
 Load the data from extern/model.sh
 1. ``` cd extern ```
-2. ``` sudo chmod a+x getModel.sh ```
+2. ``` sudo chmod a+x Model.sh ```
 
 Then the following can be executed
 ```
