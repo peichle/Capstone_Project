@@ -8,35 +8,46 @@
 
 class ObjectDetector
 {
-    const int inpWidth = 416; // Width of network's input image
-    const int inpHeight = 416; // Height of network's input image
-    float conf_threshold; // confidence threshold
-    float nms_threshold;  // nms threshold
+
 
 public:
-    ObjectDetector() = delete;
-    ObjectDetector(std::string &model_config, std::string &model_weights, std::string &classes_file, float &conf_threshold, float &nms_threshold); //default comstructor
+    // Constructor
+    ObjectDetector(std::string &model_cfg, std::string &model_weight, std::string &names_path);
+    // copy Constructor
     ObjectDetector(const ObjectDetector &other); //copy constructor
+    // copy assignment operator
     ObjectDetector &operator=(const ObjectDetector &other); //copy asignment operator
+    // move Constructor
     ObjectDetector(ObjectDetector &&other); //move constructor
+    // move assignment operator
     ObjectDetector &operator=(ObjectDetector &&other);
+    // Destructor
     ~ObjectDetector() {}
-    cv::Mat DetectObjects(cv::Mat &frame);
+    cv::Mat DetectObjects(cv::Mat &img);
 
 private:
     void GetOutputLayerNames();
-    void Get4DBlob(cv::Mat &frame, cv::Mat &blob);
-    void PostProcess(cv::Mat &frame, const std::vector<cv::Mat> &outs, float &conf_threshold);
-    void DrawPred(int classId, float conf, int left, int top, int right, int bottom, cv::Mat &frame);
-    void ReadClassesFromFile();
+    void Get4DBlob(cv::Mat &img, cv::Mat &blob);
+    void ImageProcessing(cv::Mat &img, const std::vector<cv::Mat> &outs, float &conf_threshold);
+    void DrawBoundingBox(int classId, float conf, int left, int top, int right, int bottom, cv::Mat &img);
+    void GetClasses();
 
     static std::vector<std::string> output_layer_names_;
     static std::vector<std::string> classes_;
 
-    cv::dnn::Net net_;
-    std::string model_config_{""};
-    std::string model_weights_{""};
-    std::string classes_file_{""};
+    // Width and height of networks input image
+    const int inpWidth = 350; 
+    const int inpHeight = 350;
+    // confidence threshold
+    float conf_threshold; 
+    // nms (Non Maximum Suppression) threshold
+    // Explanation https://learnopencv.com/non-maximum-suppression-theory-and-implementation-in-pytorch/
+    float nms_threshold;  
+    
+    cv::dnn::Net openCV_Net;
+    std::string config_{""};
+    std::string weights_{""};
+    std::string names_path_{""};
 };
 
 #endif

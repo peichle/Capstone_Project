@@ -3,95 +3,107 @@
 std::vector<std::string> ObjectDetector::output_layer_names_;
 std::vector<std::string> ObjectDetector::classes_;
 
-ObjectDetector::ObjectDetector(std::string &model_config, std::string &model_weights, std::string &classes_file, float &conf_threshold, float &nms_threshold) {
-    model_config_ = model_config;
-    model_weights_ = model_weights;
-    classes_file_ = classes_file;
-    conf_threshold = conf_threshold; 
-    nms_threshold = nms_threshold;
-    net_ = cv::dnn::readNetFromDarknet(model_config_, model_weights_);
-    net_.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
-    net_.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+
+/*
+    Rule of Five implemented
+*/
+
+// Constructor
+ObjectDetector::ObjectDetector(std::string &m_conf, std::string &m_weight, 
+                            std::string &names_path) : config_(m_conf), weights_(m_weight),
+                            names_path_(names_path), nms_threshold(0), conf_threshold(0) {
+    openCV_Net = cv::dnn::readNetFromDarknet(config_, weights_);
     GetOutputLayerNames();
-    ReadClassesFromFile();
+    GetClasses();
 }
 
+// copy constructor
 ObjectDetector::ObjectDetector(const ObjectDetector &other) {
-    model_config_ = other.model_config_;
-    model_weights_ = other.model_weights_;
-    classes_file_ = other.classes_file_;
-    net_ = other.net_;
+    config_ = other.config_;
+    weights_ = other.weights_;
+    names_path_ = other.names_path_;
+    openCV_Net = other.openCV_Net;
 }
 
+// copy assignment operator
 ObjectDetector &ObjectDetector::operator=(const ObjectDetector &other) {
     if (this == &other){
         return *this;
     }
-    model_config_ = other.model_config_;
-    model_weights_ = other.model_weights_;
-    classes_file_ = other.classes_file_;
-    net_ = other.net_;
+    config_ = other.config_;
+    weights_ = other.weights_;
+    names_path_ = other.names_path_;
+    openCV_Net = other.openCV_Net;
 
     return *this;
 }
 
+// move constructor
 ObjectDetector::ObjectDetector(ObjectDetector &&other) {
-    model_config_ = std::move(other.model_config_);
-    model_weights_ = std::move(other.model_weights_);
-    classes_file_ = std::move(other.classes_file_);
-    net_ = std::move(other.net_);
+    config_ = std::move(other.config_);
+    weights_ = std::move(other.weights_);
+    names_path_ = std::move(other.names_path_);
+    openCV_Net = std::move(other.openCV_Net);
 }
 
+// move assignment operator
 ObjectDetector &ObjectDetector::operator=(ObjectDetector &&other) {
     if (this == &other) {
         return *this;
     }
-    model_config_ = std::move(other.model_config_);
-    model_weights_ = std::move(other.model_weights_);
-    classes_file_ = std::move(other.classes_file_);
-    net_ = std::move(other.net_);
+    config_ = std::move(other.config_);
+    weights_ = std::move(other.weights_);
+    names_path_ = std::move(other.names_path_);
+    openCV_Net = std::move(other.openCV_Net);
 
     return *this;
 }
 
-cv::Mat ObjectDetector::DetectObjects(cv::Mat &frame) {
+
+
+cv::Mat ObjectDetector::DetectObjects(cv::Mat &img) {
     cv::Mat blob;
-    Get4DBlob(frame, blob);
-    net_.setInput(blob);
-    std::vector<cv::Mat> outs;
-    net_.forward(outs, output_layer_names_);
-    PostProcess(frame, outs, conf_threshold);
+    std::vector<cv::Mat> output;
+
+    Get4DBlob(img, blob);
+    
+    openCV_Net.setInput(blob);
+    openCV_Net.forward(output, output_layer_names_);
+    ImageProcessing(img, output, conf_threshold);
     cv::Mat detected_frame;
-    frame.convertTo(detected_frame, CV_8U);
+    img.convertTo(detected_frame, CV_8U);
     return std::move(detected_frame);
 }
 
-void ObjectDetector::Get4DBlob(cv::Mat &frame, cv::Mat &blob) {
-    cv::dnn::blobFromImage(frame, blob, 1 / 255.0, cv::Size(inpWidth, inpHeight), cv::Scalar(0, 0, 0), true, false);
+
+
+void ObjectDetector::Get4DBlob(cv::Mat &img, cv::Mat &blob_output) {
+    // Information taken from: 
+    // https://docs.opencv.org/3.4/d6/d0f/group__dnn.html#ga29f34df9376379a603acd8df581ac8d7
+    // Creates 4-dimensional blob from image. 
+    cv::dnn::blobFromImage(img, blob_output, 1 / 255.0, 
+                            cv::Size(inpWidth, inpHeight), cv::Scalar(0, 0, 0), true, false);
 }
 
 // Remove bbox with low confidence using nms
-void ObjectDetector::PostProcess(cv::Mat &frame, const std::vector<cv::Mat> &outs, float &conf_threshold) {
+void ObjectDetector::ImageProcessing(cv::Mat &img, const std::vector<cv::Mat> &output, float &cfg_threshold) {
     std::vector<int> classIds;
     std::vector<float> confidences;
     std::vector<cv::Rect> boxes;
-    for (size_t i = 0; i < outs.size(); ++i) {   
-            // Network produces output blob with a shape NxC where N is a number of
-            // detected objects and C is a number of classes + 4 where the first 4
-            // numbers are [center_x, center_y, width, height]
-        float *data = (float *)outs[i].data;
-        for (int j = 0; j < outs[i].rows; ++j, data += outs[i].cols) {
-            cv::Mat scores = outs[i].row(j).colRange(5, outs[i].cols);
+    for (size_t i = 0; i < output.size(); ++i) {   
+        float *data = (float *)output[i].data;
+        for (int j = 0; j < output[i].rows; ++j, data += output[i].cols) {
+            cv::Mat scores = output[i].row(j).colRange(5, output[i].cols);
             cv::Point classIdPoint;
             double confidence;
 
-            // Get the value and location of the maximum score
+            // find value and position with highest number
             minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
-            if (confidence > conf_threshold) {
-                int centerX = (int)(data[0] * frame.cols);
-                int centerY = (int)(data[1] * frame.rows);
-                int width = (int)(data[2] * frame.cols);
-                int height = (int)(data[3] * frame.rows);
+            if (confidence > cfg_threshold) {
+                int centerX = (int)(data[0] * img.cols);
+                int centerY = (int)(data[1] * img.rows);
+                int width = (int)(data[2] * img.cols);
+                int height = (int)(data[3] * img.rows);
                 int left = centerX - width / 2;
                 int top = centerY - height / 2;
 
@@ -104,19 +116,19 @@ void ObjectDetector::PostProcess(cv::Mat &frame, const std::vector<cv::Mat> &out
 
     // Non-Max Supression
     std::vector<int> indices;
-    cv::dnn::NMSBoxes(boxes, confidences, conf_threshold, nms_threshold, indices);
+    cv::dnn::NMSBoxes(boxes, confidences, cfg_threshold, nms_threshold, indices);
     for (size_t i = 0; i < indices.size(); ++i) {
         int idx = indices[i];
         cv::Rect box = boxes[idx];
-        DrawPred(classIds[idx], confidences[idx], box.x, box.y, box.x + box.width, box.y + box.height, frame);
+        DrawBoundingBox(classIds[idx], confidences[idx], box.x, box.y, box.x + box.width, box.y + box.height, img);
     }
 }
 
-void ObjectDetector::DrawPred(int classId, float conf, int left, int top, int right, int bottom, cv::Mat &frame) {
-    //Draw a rectangle displaying the bounding box
-    cv::rectangle(frame, cv::Point(left, top), cv::Point(right, bottom), cv::Scalar(255, 178, 50), 3);
+void ObjectDetector::DrawBoundingBox(int classId, float conf, int left, int top, int right, int bottom, cv::Mat &img) {
+    
+    cv::rectangle(img, cv::Point(left, top), cv::Point(right, bottom), cv::Scalar(10, 178, 50), 3);
 
-    //Get the label for the class name and its confidence
+    //Get the object type name and confidence
     std::string label = cv::format("%.2f", conf);
     if (!classes_.empty())
     {
@@ -124,31 +136,26 @@ void ObjectDetector::DrawPred(int classId, float conf, int left, int top, int ri
         label = classes_[classId] + ":" + label;
     }
 
-    //Display the label at the top of the bounding box
-    int baseLine;
-    cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
-    top = cv::max(top, labelSize.height);
-    cv::rectangle(frame, cv::Point(left, top - round(1.5 * labelSize.height)), cv::Point(left + round(1.5 * labelSize.width), top + baseLine), cv::Scalar(255, 255, 255), cv::FILLED);
-    cv::putText(frame, label, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 0), 1);
+    cv::putText(img, label, cv::Point(left, bottom), cv::FONT_HERSHEY_DUPLEX, 1.00, 
+                cv::Scalar(0, 0, 255), true);
 }
 
 void ObjectDetector::GetOutputLayerNames() {
     if (output_layer_names_.empty()) {
-        //Get the indices of the output layers, i.e. the layers with unconnected outputs
-        std::vector<int> out_layers = net_.getUnconnectedOutLayers();
-        //get the names of all the layers in the network
-        std::vector<std::string> layer_names = net_.getLayerNames();
-        output_layer_names_.resize(out_layers.size());
-        for (std::size_t i = 0; i < out_layers.size(); i++) {
-            output_layer_names_.at(i) = layer_names[out_layers[i] - 1];
+        std::vector<int> output_layers = openCV_Net.getUnconnectedOutLayers();
+        std::vector<std::string> layer_names = openCV_Net.getLayerNames();
+        output_layer_names_.resize(output_layers.size());
+        for (std::size_t i = 0; i < output_layers.size(); i++) {
+            output_layer_names_.at(i) = layer_names[output_layers[i] - 1];
         }
     }
 }
-    // Open and read class file
-void ObjectDetector::ReadClassesFromFile() {
-    std::ifstream ifs(classes_file_.c_str());
+
+// Read existing classes from openCV
+void ObjectDetector::GetClasses() {
+    std::ifstream ifs(names_path_.c_str());
     if(!ifs.is_open())
-        CV_Error(cv::Error::StsError, "Class File (" + classes_file_ + ") not found.");
+        CV_Error(cv::Error::StsError, "Class File (" + names_path_ + ") not found.");
     std::string line;
     while(std::getline(ifs, line)) {
         classes_.push_back(line);
