@@ -6,8 +6,8 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++17 -pthread")
 
 find_package(OpenCV 4.2.0 REQUIRED)
 
-include_directories(include)
-include_directories(${OpenCV_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
 add_definitions(${OpenCV_DEFINITIONS})
 
@@ -15,4 +15,4 @@ add_definitions(${OpenCV_DEFINITIONS})
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(car_detection ${SOURCES})
-target_link_libraries(car_detection ${OpenCV_LIBS} )
+target_link_libraries(car_detection ${OpenCV_LIBS})
