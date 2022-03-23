@@ -1,8 +1,7 @@
 # Capstone_Project
-Object detection (tested with cars) using openCV and C++.
-An image path is enterd in src/main.cpp. This image is taken and a bounding box is overlayed throw the usage of openCV.
-Furthermore the confidence is calculated to which object type it is classified. The classes are also used from openCV.
-
+Object detection (tested with vehicles) using openCV and C++.
+The detection works as follows. An image-path is in src/main.cpp. This image is taken and a bounding box is overlayed throw the usage of openCV. The bounding box is placed over the detected objects, in this case it tested with three cars. Furthermore, the confidence is calculated to which object type it is classified. The classes are used from openCV. The code finishes by it self after 3 seconds. This duration is implemented in the src/main.cpp and can be adjusted. 
+Finally, the image with the bounding box is saved in the project workspace.
 
 ## Dependecies
 - Ubuntu 20.04
