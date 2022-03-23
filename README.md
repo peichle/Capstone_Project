@@ -4,10 +4,16 @@ The detection works as follows. An image-path is in src/main.cpp. This image is 
 Finally, the image with the bounding box is saved in the project workspace.
 
 ## Dependecies
+Local:
 - Ubuntu 20.04
 - cmake >= 3.22.3
 - g++/gcc >= 9.4.0
 - openCV >= 4.2.0
+- 
+Udacity-Workspace:
+- cmake >= 3.13.0
+- g++/gcc >= 9.4.0
+- openCV >= 4.1.0
 
 ## Project Structure
 
