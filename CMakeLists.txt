@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.22.3)
+cmake_minimum_required(VERSION 3.13.0)
 
 set(CMAKE_CXX_STANDARD 17)
 project(car_detection)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++17 -pthread")
 
-find_package(OpenCV 4.2.0 REQUIRED)
+find_package(OpenCV 4.1.0 REQUIRED)
 
 INCLUDE_DIRECTORIES(include)
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
