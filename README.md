@@ -45,13 +45,13 @@ cmake .. && make
 ```
 ## Adjustments 
 Changes by the user can be done in the main file 
-
 ![Result](https://github.com/peichle/Capstone_Project/blob/main/image_output.jpg?raw=true)
 
 ## References
 - Darknet: https://github.com/pjreddie/darknet
 - openCV: https://docs.opencv.org/4.2.0/index.html
-
+- Yolo/Coco Data: https://pjreddie.com/darknet/yolo/
+![image](https://user-images.githubusercontent.com/50845966/159706728-8a0921f3-f333-4ad6-a41a-fc861d9db4dd.png)
 
 ## Achieved Project Specifications
 
