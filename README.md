@@ -31,9 +31,10 @@ There are 4 main folders
 Clone the repo
 ``` Git clone https://github.com/peichle/Capstone_Project.git ```
 
-Load the data from extern/model.sh
+Load the data from extern/model.sh according to https://askubuntu.com/questions/38661/how-do-i-run-sh-scripts
 1. ``` cd extern ```
-2. ``` sudo chmod a+x Model.sh ```
+2. ``` sudo chmod +x Model.sh ``` (Give execute permission to your script)
+3. ``` ./Model.sh ```
 
 Then the following can be executed
 ```
